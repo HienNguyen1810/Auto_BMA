@@ -1,0 +1,446 @@
+{
+	"info": {
+		"_postman_id": "0957833f-d7d5-45ff-851f-79ae05d859f2",
+		"name": "Automatically create and add 10 members in one family",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17553996",
+		"_collection_link": "https://www.postman.com/mission-observer-66106980/workspace/coder-hub/collection/17553996-0957833f-d7d5-45ff-851f-79ae05d859f2?action=share&source=collection_link&creator=17553996"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response has token\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    \r",
+							"    // Kiểm tra và gán authToken nếu tồn tại\r",
+							"    if (jsonData.data && jsonData.data.accessToken) {\r",
+							"        pm.environment.set(\"authToken\", jsonData.data.accessToken);\r",
+							"    } else {\r",
+							"        // Log lỗi nếu không có accessToken trong phản hồi\r",
+							"        console.log(\"No accessToken found in response\");\r",
+							"    }\r",
+							"\r",
+							"    // Log the authToken\r",
+							"    console.log(\"Token: \" + pm.environment.get(\"authToken\"));\r",
+							"\r",
+							"    // Kiểm tra xem authToken đã được lưu thành công chưa\r",
+							"    pm.expect(pm.environment.get(\"authToken\")).to.be.a('string');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n                \"email\": \"nm.hien1@tego.global\",\r\n                \"password\": \"Hien1@1810\"\r\n            }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/v1/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check the current number of members in a family",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"pm.test(\"Check length current family list\", function () {\r",
+							"    pm.sendRequest({\r",
+							"        url: \"http://localhost:3000/api/v1/family/members/961b1266-67ed-48d6-b1ae-411bfe778371\",\r",
+							"        method: \"GET\",\r",
+							"        header: {\r",
+							"            \"Content-Type\": \"application/json\",\r",
+							"            Authorization: \"Bearer \" + pm.environment.get(\"authToken\"), // Sử dụng authToken đã lưu\r",
+							"        },\r",
+							"    }, function (err, res) {\r",
+							"        if (err) {\r",
+							"            console.error(err);\r",
+							"            return;\r",
+							"        }\r",
+							"\r",
+							"        var jsonData = res.json();\r",
+							"console.log(jsonData.data.membersId,\"jsonData\")\r",
+							"        // Kiểm tra xem dữ liệu phản hồi có đúng là một mảng không\r",
+							"        if (jsonData && jsonData.data.membersId ) {\r",
+							"            // Đặt currentMemberList trong biến môi trường\r",
+							"            pm.environment.set(\"currentMemberList\", jsonData.data.membersId);\r",
+							"\r",
+							"            // Log currentMemberList\r",
+							"            console.log(\r",
+							"                \"Số thành viên trước khi chạy chương trình: \" +\r",
+							"                pm.environment.get(\"currentMemberList\").length\r",
+							"            );\r",
+							"        } else {\r",
+							"            console.error(\"Invalid response format for family list\");\r",
+							"        }\r",
+							"    });\r",
+							"});\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/api/v1/family/members/961b1266-67ed-48d6-b1ae-411bfe778371",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"family",
+						"members",
+						"961b1266-67ed-48d6-b1ae-411bfe778371"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Automatically create 10 new member",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"pm.test(\"Create 10 member\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"  if (pm.environment.get(\"authToken\") !== null) {\r",
+							"    let memberIds = [];\r",
+							"    let currentFamilyList = pm.environment.get(\"currentFamilyList\") || [];\r",
+							"    for (\r",
+							"      let i = currentFamilyList.length + 1;\r",
+							"      i <= currentFamilyList.length + 10;\r",
+							"      i++\r",
+							"    ) {\r",
+							"      let memberData = {\r",
+							"        name: `Nguyen Minh ${i}`,\r",
+							"        nickName: `Nguyen Minh ${i}`,\r",
+							"        birthday: `1/1/1988`,\r",
+							"        gender: \"female\",\r",
+							"        homeTown: \"Tp.HCM\",\r",
+							"        address: `${i}/${i} Vũng Tàu`,\r",
+							"        star: \"Kế Đô\",\r",
+							"        pagodaId: \"d3bb9186-a014-4882-bdfd-1fce78aa240a\",\r",
+							"        familyId: \"null\",\r",
+							"      };\r",
+							"      pm.sendRequest(\r",
+							"        {\r",
+							"          url: \"http://localhost:3000/api/v1/members\",\r",
+							"          method: \"POST\",\r",
+							"          header: {\r",
+							"            \"Content-Type\": \"application/json\",\r",
+							"            Authorization: `Bearer ${pm.environment.get(\"authToken\")}`,\r",
+							"          },\r",
+							"          body: {\r",
+							"            mode: \"raw\",\r",
+							"            raw: JSON.stringify(memberData),\r",
+							"          },\r",
+							"        },\r",
+							"        function (err, res) {\r",
+							"          if (err) {\r",
+							"            console.error(err);\r",
+							"            return;\r",
+							"          }\r",
+							"\r",
+							"          let jsonData = res.json();\r",
+							"          if (jsonData && jsonData.data && jsonData.data._id) {\r",
+							"            memberIds.push(jsonData.data._id);\r",
+							"            console.log(`memberIds`,memberIds.length);\r",
+							"            if (memberIds.length === 10) {\r",
+							"              pm.environment.set(\"memberIds\", JSON.stringify(memberIds));\r",
+							"            }\r",
+							"          } else {\r",
+							"            console.error(`Failed to create member ${i}`);\r",
+							"          }\r",
+							"        }\r",
+							"      );\r",
+							"    }\r",
+							"  }\r",
+							"});\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/v1/family/members/961b1266-67ed-48d6-b1ae-411bfe778371",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"family",
+						"members",
+						"961b1266-67ed-48d6-b1ae-411bfe778371"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Automatically add 10 members in one family",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"\r",
+							"pm.test(\"add 10 member in one family\", function () {\r",
+							"  let memberIds = JSON.parse(pm.environment.get(\"memberIds\") || \"[]\");\r",
+							"\tlet familyId = \"961b1266-67ed-48d6-b1ae-411bfe778371\";\r",
+							"  console.log(memberIds,\"memberIds\")\r",
+							"\tconsole.log(familyId,\"familyId\")\r",
+							"  memberIds.forEach(function (memberId) {\r",
+							"    let requestBody = {\r",
+							"      pagodaId: \"d3bb9186-a014-4882-bdfd-1fce78aa240a\",\r",
+							"    };\r",
+							"\r",
+							"    pm.sendRequest(\r",
+							"      {\r",
+							"        url: `http://localhost:3000/api/v1/family/${familyId}/add-family/${memberId}`,\r",
+							"        method: \"PATCH\",\r",
+							"        header: {\r",
+							"          \"Content-Type\": \"application/json\",\r",
+							"          Authorization: `Bearer ${pm.environment.get(\"authToken\")}`,\r",
+							"        },\r",
+							"        body: {\r",
+							"          mode: \"raw\",\r",
+							"          raw: JSON.stringify(requestBody),\r",
+							"        },\r",
+							"      },\r",
+							"      function (err, res) {\r",
+							"        if (err) {\r",
+							"          console.error(err);\r",
+							"          return;\r",
+							"        }\r",
+							"\r",
+							"        console.log(`Đã add thành công member với id: ${memberId}`);\r",
+							"      }\r",
+							"    );\r",
+							"  });\r",
+							"});\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/api/v1/family",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"family"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check the number of members after adding 10 members in a family",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"\r",
+							"pm.test(\"Check length family list after add 10 family\", function () {\r",
+							"  pm.sendRequest(\r",
+							"    {\r",
+							"      url: \"http://localhost:3000/api/v1/family/members/961b1266-67ed-48d6-b1ae-411bfe778371\",\r",
+							"      method: \"GET\",\r",
+							"      header: {\r",
+							"        \"Content-Type\": \"application/json\",\r",
+							"        Authorization: \"Bearer \" + pm.environment.get(\"authToken\"),\r",
+							"      },\r",
+							"    },\r",
+							"    function (err, res) {\r",
+							"      if (err) {\r",
+							"        console.error(err);\r",
+							"        return;\r",
+							"      }\r",
+							" \t\t\tpm.response.to.have.status(200);\r",
+							"      console.log(\"số thành viên sau khi thêm tự động\",res.json().data.membersId.length);\r",
+							"    }\r",
+							"  );\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/api/v1/family/members/961b1266-67ed-48d6-b1ae-411bfe778371",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"family",
+						"members",
+						"961b1266-67ed-48d6-b1ae-411bfe778371"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
