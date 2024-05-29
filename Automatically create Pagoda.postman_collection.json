@@ -1,0 +1,349 @@
+{
+	"info": {
+		"_postman_id": "2cabd9b9-b0a6-4909-a94e-e667cb6e1834",
+		"name": "Automatically create Pagoda",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "17553996",
+		"_collection_link": "https://www.postman.com/mission-observer-66106980/workspace/coder-hub/collection/17553996-2cabd9b9-b0a6-4909-a94e-e667cb6e1834?action=share&source=collection_link&creator=17553996"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response has token\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    \r",
+							"    // Kiểm tra và gán authToken nếu tồn tại\r",
+							"    if (jsonData.data && jsonData.data.accessToken) {\r",
+							"        pm.environment.set(\"authToken\", jsonData.data.accessToken);\r",
+							"    } else {\r",
+							"        // Log lỗi nếu không có accessToken trong phản hồi\r",
+							"        console.log(\"No accessToken found in response\");\r",
+							"    }\r",
+							"\r",
+							"    // Log the authToken\r",
+							"    console.log(\"Token: \" + pm.environment.get(\"authToken\"));\r",
+							"\r",
+							"    // Kiểm tra xem authToken đã được lưu thành công chưa\r",
+							"    pm.expect(pm.environment.get(\"authToken\")).to.be.a('string');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"nm.hien1@tego.global\",\r\n  \"password\": \"Hien@1810\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/v1/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check the current number of Pagoda",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check the current number of Pagoda\", function () {\r",
+							"  pm.sendRequest(\r",
+							"    {\r",
+							"      url: \"http://localhost:3000/api/v1/pagodas\",\r",
+							"      method: \"GET\",\r",
+							"      header: {\r",
+							"        \"Content-Type\": \"application/json\",\r",
+							"        Authorization: \"Bearer \" + pm.environment.get(\"authToken\"), // Sử dụng authToken đã lưu\r",
+							"      },\r",
+							"    },\r",
+							"    function (err, res) {\r",
+							"      if (err) {\r",
+							"        console.error(err);\r",
+							"        return;\r",
+							"      }\r",
+							"\r",
+							"      var jsonData = res.json();\r",
+							"      console.log(jsonData.data, \"jsonData\");\r",
+							"      // Kiểm tra xem dữ liệu phản hồi có đúng là một mảng không\r",
+							"      if (jsonData && jsonData.data) {\r",
+							"        // Đặt currentMemberList trong biến môi trường\r",
+							"        pm.environment.set(\"currentPagodaList\", jsonData.data);\r",
+							"\r",
+							"        // Log currentMemberList\r",
+							"        console.log(\r",
+							"          \"Tổng số chùa trước khi chạy chương trình: \",\r",
+							"          pm.environment.get(\"currentPagodaList\").length\r",
+							"        );\r",
+							"      } else {\r",
+							"        console.error(\"Invalid response format for family list\");\r",
+							"      }\r",
+							"    }\r",
+							"  );\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/api/v1/pagodas",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"pagodas"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Automatically create 10 new member",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Create 10 pagodas\", function () {\r",
+							"  pm.response.to.have.status(200);\r",
+							"  if (pm.environment.get(\"authToken\") !== null) {\r",
+							"    let pagodaIds = [];\r",
+							"    let currentPagodaList = pm.environment.get(\"currentPagodaList\") || [];\r",
+							"    for (\r",
+							"      let i = currentPagodaList.length + 1;\r",
+							"      i <= currentPagodaList.length + 10;\r",
+							"      i++\r",
+							"    ) {\r",
+							"      let pagodaData = {\r",
+							"        name: `Ninh Bình ${i} Pagoda`,\r",
+							"        owner: `Lê Văn ${i} `,\r",
+							"        address: ` ${i} Nguyễn Xí TP.HCM`,\r",
+							"        description: \"An Bình Xung Túc\",\r",
+							"        image: ` ${i}.jpg`,\r",
+							"      };\r",
+							"      pm.sendRequest(\r",
+							"        {\r",
+							"          url: \"http://localhost:3000/api/v1/pagodas\",\r",
+							"          method: \"POST\",\r",
+							"          header: {\r",
+							"            \"Content-Type\": \"application/json\",\r",
+							"            Authorization: `Bearer ${pm.environment.get(\"authToken\")}`,\r",
+							"          },\r",
+							"          body: {\r",
+							"            mode: \"raw\",\r",
+							"            raw: JSON.stringify(pagodaData),\r",
+							"          },\r",
+							"        },\r",
+							"        function (err, res) {\r",
+							"          if (err) {\r",
+							"            console.error(err);\r",
+							"            return;\r",
+							"          }\r",
+							"\r",
+							"          let jsonData = res.json();\r",
+							"          if (jsonData && jsonData.data && jsonData.data._id) {\r",
+							"            pagodaIds.push(jsonData.data._id);\r",
+							"            console.log(`pagodaIds`, pagodaIds.length);\r",
+							"            if (pagodaIds.length === 10) {\r",
+							"              pm.environment.set(\"pagodaIds\", JSON.stringify(pagodaIds));\r",
+							"            }\r",
+							"          } else {\r",
+							"            console.error(`Failed to create pagoda ${i}`);\r",
+							"          }\r",
+							"        }\r",
+							"      );\r",
+							"    }\r",
+							"  }\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/v1/pagodas",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"pagodas"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check the number of Pagodas after adding 10 Pagodas",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"\r",
+							"\r",
+							"pm.test(\"Check length family list after add 10 family\", function () {\r",
+							"  pm.sendRequest(\r",
+							"    {\r",
+							"      url: \"http://localhost:3000/api/v1/pagodas\",\r",
+							"      method: \"GET\",\r",
+							"      header: {\r",
+							"        \"Content-Type\": \"application/json\",\r",
+							"        Authorization: \"Bearer \" + pm.environment.get(\"authToken\"),\r",
+							"      },\r",
+							"    },\r",
+							"    function (err, res) {\r",
+							"      if (err) {\r",
+							"        console.error(err);\r",
+							"        return;\r",
+							"      }\r",
+							" \t\t\tpm.response.to.have.status(200);\r",
+							"      console.log(\"Tổng số chùa sau khi thêm tự động\",res.json().data.length);\r",
+							"    }\r",
+							"  );\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{authToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:3000/api/v1/pagodas",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"v1",
+						"pagodas"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
